@@ -1,0 +1,13 @@
+[project]
+name = "binary-analysis-toolkit"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "capstone>=5.0.9",
+    "pefile>=2024.8.26",
+    "pyelftools>=0.33",
+    "rich>=15.0.0",
+    "typer>=0.26.7",
+]

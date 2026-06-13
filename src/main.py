@@ -1,7 +1,7 @@
 import typer
 from parser.binary_loader import detect_format
-from parser.pe_parser import get_pe_architecture , get_pe_starting , get_pe_sections
-from parser.elf_parser import get_elf_architecture , get_elf_starting , get_elf_sections
+from parser.pe_parser import get_pe_architecture , get_pe_starting , get_pe_sections , get_pe_metadata
+from parser.elf_parser import get_elf_metadata
 
 app = typer.Typer()
 
@@ -10,21 +10,17 @@ def analyze(path: str):
     fmt = detect_format(path)
 
     if fmt == "ELF":
-        arch = get_elf_architecture(path)
-        starting = get_elf_starting(path)
-        sections = get_elf_sections(path)
+        metadata = get_elf_metadata(path)
 
     elif fmt == "PE":
-        arch = get_pe_architecture(path)
-        starting = get_pe_starting(path)
-        sections = get_pe_sections(path)
+        metadata = get_pe_metadata(path)
 
 
     print(f"Format: {fmt}")
-    print(f"Architecture: {arch}")
-    print(f"Entrypoint: {starting}")
+    print(f"Architecture: {metadata["arch"]}")
+    print(f"Entrypoint: {metadata["entry"]}")
     print(f"Sections:")
-    for section in sections:
+    for section in metadata["sections"]:
         print(
             f"{section['name']:15}"
             f"addr=0x{section['address']:x} "

@@ -1,18 +1,13 @@
-from pathlib import Path
 import typer
+from parser.binary_loader import detect_format
 
 app = typer.Typer()
 
 @app.command()
 def analyze(path: str):
-    file = Path(path)
+    fmt = detect_format(path)
 
-    if not file.exists():
-        print(f"File not found: {path}")
-        raise typer.Exit(1)
-
-    print(f"Name: {file.name}")
-    print(f"Size: {file.stat().st_size} bytes")
+    print(f"Format: {fmt}")
 
 if __name__ == "__main__":
     app()

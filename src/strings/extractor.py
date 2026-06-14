@@ -3,17 +3,25 @@ from elftools.elf.elffile import ELFFile
 from parser.binary_loader import detect_format
 import binary2strings as b2s
 
+PE_SECTIONS = {
+    ".data",
+    ".rdata",
+    ".text"
+}
+
+ELF_SECTIONS = {
+    ".rodata",
+    ".data",
+    ".text"
+}
+
+
 def get_sections(path):
     fmt = detect_format(path)
     sections = []
 
     if fmt == "PE":
         pe = pefile.PE(path)
-        interesting = {
-            ".data",
-            ".rdata",
-            ".text"
-        }
 
         for section in pe.sections:
             name = (
@@ -21,7 +29,7 @@ def get_sections(path):
                 .decode(errors="ignore")
                 .rstrip("\x00")
             )
-            if name in interesting:
+            if name in PE_SECTIONS:
                 sections.append({
                     "name": name,
                     "data": section.get_data()
@@ -30,14 +38,9 @@ def get_sections(path):
     elif fmt == "ELF":
         with open(path, "rb") as f:
             elf = ELFFile(f)
-            interesting = {
-                ".rodata",
-                ".data",
-                ".text"
-            }
 
             for section in elf.iter_sections():
-                if section.name in interesting:
+                if section.name in ELF_SECTIONS:
                     sections.append({
                         "name": section.name,
                         "data": section.data()

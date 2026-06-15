@@ -24,3 +24,9 @@ pub struct Import {
     pub library: String,
     pub function: String,
 }
+#[derive(Debug)]
+pub struct Finding {
+    pub severity: String,
+    pub title: String,
+    pub description: String,
+}

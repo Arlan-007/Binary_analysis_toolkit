@@ -21,7 +21,7 @@ pub fn get_pe_metadata(path: &str) -> Result<BinaryInfo, Box<dyn std::error::Err
         .collect();
 
     Ok(BinaryInfo {
-        format: BinaryFormat::Elf,
+        format: BinaryFormat::Pe,
         architecture: arch.to_string(),
         entrypoint: entry,
         sections,

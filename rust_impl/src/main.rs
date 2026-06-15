@@ -40,13 +40,13 @@ fn main() {
 
     let strings = extract_strings(&path).expect("Failed to extract strings");
     println!("Found {} strings", strings.len());
-    for string in strings {
-        println!("{}", string);
-    }
+    // for string in strings {
+    //     println!("{}", string);
+    // }
 
     let imports = get_imports(&path , fmt).expect("Failed to extract imports");
     println!("Found {} imports", imports.len());
-    for import in imports {
-        println!("{:#?}", import);
-    }
+    // for import in imports {
+    //     println!("{:#?}", import);
+    // }
 }

@@ -12,6 +12,7 @@ use format::pe::get_pe_metadata;
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
 use analysis::heuristics::suspicious_imports;
+use analysis::heuristics::suspicious_url;
 
 fn main() {
     let path = env::args()
@@ -51,9 +52,16 @@ fn main() {
     // for import in imports {
     //     println!("{:#?}", import);
     // }
+
     let suspicious_imports = suspicious_imports(&imports);
     println!("Found {} suspicious_imports", suspicious_imports.len());
     // for import in suspicious_imports {
     //     println!("{:#?}", import);
     // }
+
+    let suspicious_url = suspicious_url(&strings);
+    println!("Found {} URL", suspicious_url.len());
+    for url in suspicious_url {
+        println!("{:#?}", url);
+    }
 }

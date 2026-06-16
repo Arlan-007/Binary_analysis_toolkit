@@ -1,8 +1,9 @@
+
 SUSPICIOUS_IMPORTS = {
-    "CreateRemoteThread",
-    "WriteProcessMemory",
-    "VirtualAllocEx",
-    "IsDebuggerPresent",
+    "createremotethread",
+    "writeprocessmemory",
+    "virtualallocex",
+    "isdebuggerpresent",
     "ptrace",
     "dlopen",
 }
@@ -11,7 +12,9 @@ def get_suspicious_imports(imports):
     suspicious = []
 
     for imp in imports:
-        if imp["function"] in SUSPICIOUS_IMPORTS:
-            suspicious.append(imp)
+        func_name = imp.get("function")
+        if func_name and isinstance(func_name, str):
+            if func_name.lower() in SUSPICIOUS_IMPORTS:
+                suspicious.append(imp)
 
     return suspicious

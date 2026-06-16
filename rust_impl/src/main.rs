@@ -9,10 +9,10 @@ use crate::models::BinaryFormat;
 use format::detect::detect_format;
 use format::elf::get_elf_metadata;
 use format::pe::get_pe_metadata;
+
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
-use analysis::heuristics::suspicious_imports;
-use analysis::heuristics::suspicious_url;
+use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
 
 fn main() {
     let path = env::args()
@@ -54,14 +54,32 @@ fn main() {
     // }
 
     let suspicious_imports = suspicious_imports(&imports);
-    println!("Found {} suspicious_imports", suspicious_imports.len());
+    println!("Found {} suspicious imports", suspicious_imports.len());
     // for import in suspicious_imports {
     //     println!("{:#?}", import);
     // }
 
     let suspicious_url = suspicious_url(&strings);
     println!("Found {} URL", suspicious_url.len());
-    for url in suspicious_url {
-        println!("{:#?}", url);
+    // for url in suspicious_url {
+    //     println!("{:#?}", url);
+    // }
+
+    let suspicious_ip = suspicious_ip(&strings);
+    println!("Found {} IPs", suspicious_ip.len());
+    // for ip in suspicious_ip {
+    //     println!("{:#?}", ip);
+    // }
+
+    let credentials = suspicious_credentials(&strings);
+    println!("Found {} credentials", credentials.len());
+    // for credential in credentials {
+    //     println!("{:#?}", credential);
+    // }
+
+    let suspicious_sections = suspicious_credentials(&strings);
+    println!("Found {} Suspicious Sections", suspicious_sections.len());
+    for sections in suspicious_sections {
+        println!("{:#?}", sections);
     }
 }

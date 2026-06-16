@@ -1,5 +1,4 @@
-#[derive(Debug)]
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum BinaryFormat {
     Elf,
     Pe,
@@ -7,12 +6,14 @@ pub enum BinaryFormat {
     Unknown,
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Section {
     pub name: String,
     pub address: u64,
     pub size: u64,
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct BinaryInfo {
     pub format: BinaryFormat,
     pub architecture: String,
@@ -20,13 +21,23 @@ pub struct BinaryInfo {
     pub sections: Vec<Section>,
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Import {
     pub library: String,
     pub function: String,
 }
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Finding {
-    pub severity: String,
+    pub severity: Severity,
     pub title: String,
+    pub category: String,
     pub description: String,
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum Severity {
+    Low,
+    Medium,
+    High,
+    Critical,
 }

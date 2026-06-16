@@ -1,6 +1,7 @@
 mod models;
 mod format;
 mod analysis;
+mod data;
 use std::env;
 
 use crate::models::BinaryFormat;
@@ -10,6 +11,7 @@ use format::elf::get_elf_metadata;
 use format::pe::get_pe_metadata;
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
+use analysis::heuristics::suspicious_imports;
 
 fn main() {
     let path = env::args()
@@ -47,6 +49,11 @@ fn main() {
     let imports = get_imports(&path , fmt).expect("Failed to extract imports");
     println!("Found {} imports", imports.len());
     // for import in imports {
+    //     println!("{:#?}", import);
+    // }
+    let suspicious_imports = suspicious_imports(&imports);
+    println!("Found {} suspicious_imports", suspicious_imports.len());
+    // for import in suspicious_imports {
     //     println!("{:#?}", import);
     // }
 }

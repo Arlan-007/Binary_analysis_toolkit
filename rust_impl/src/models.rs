@@ -11,6 +11,7 @@ pub struct Section {
     pub name: String,
     pub address: u64,
     pub size: u64,
+    // pub bytes: Vec<u8>,
 }
 #[derive(Debug)]
 #[allow(dead_code)]

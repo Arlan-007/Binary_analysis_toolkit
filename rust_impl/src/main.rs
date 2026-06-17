@@ -12,7 +12,7 @@ use format::pe::get_pe_metadata;
 
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
-use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
+use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections, detect_encoded_strings};
 
 fn main() {
     let path = env::args()
@@ -77,9 +77,15 @@ fn main() {
     //     println!("{:#?}", credential);
     // }
 
-    let suspicious_sections = suspicious_credentials(&strings);
+    let suspicious_sections = suspicious_sections(&info.sections);
     println!("Found {} Suspicious Sections", suspicious_sections.len());
-    for sections in suspicious_sections {
-        println!("{:#?}", sections);
+    // for sections in suspicious_sections {
+    //     println!("{:#?}", sections);
+    // }
+
+    let encodings = detect_encoded_strings(&strings);
+    println!("Found {} encodings", encodings.len());
+    for encoding in encodings {
+        println!("{:#?}", encoding);
     }
 }

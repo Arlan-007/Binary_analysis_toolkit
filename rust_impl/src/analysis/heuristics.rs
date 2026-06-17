@@ -7,6 +7,7 @@ use crate::data::url_signature::{URL_REGEX, EXECUTABLE_EXTENSIONS};
 use crate::data::ip_signature::{IPV4_REGEX, PRIVATE_IP_PREFIXES, LOCAL_IPS};
 use crate::data::credential_signature::CREDENTIAL_RULES;
 use crate::data::section_signature::SECTION_RULES;
+use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -151,6 +152,44 @@ pub fn suspicious_sections(sections: &[Section]) -> Vec<Finding> {
                         ),
                     });
                 }
+            }
+        }
+    }
+    findings
+}
+
+pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let mut found: HashSet<String> = HashSet::new();
+
+    for s in strings {
+        if found.insert(s.clone()) {
+            if is_base64(s) {
+                let decoded = decode_base64(s).unwrap_or_else(|| "<non-printable>".to_string());
+                findings.push(Finding {
+                    severity: Severity::Low,
+                    title: "Base64 Encoded String".to_string(),
+                    category: "Encoded String".to_string(),
+                    description: format!(
+                        "Base64 string detected\nEncoded: {}\nDecoded: {}",
+                        s,
+                        decoded
+                    ),
+                });
+            }
+
+            if is_hex(s) {
+                let decoded = decode_hex(s).unwrap_or_else(|| "<non-printable>".to_string());
+                findings.push(Finding {
+                    severity: Severity::Low,
+                    title: "Hex Encoded String".to_string(),
+                    category: "Encoded String".to_string(),
+                    description: format!(
+                        "Hex encoded string detected\nEncoded: {}\nDecoded: {}",
+                        s,
+                        decoded
+                    ),
+                });
             }
         }
     }

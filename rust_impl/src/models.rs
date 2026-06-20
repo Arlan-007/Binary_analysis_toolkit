@@ -42,3 +42,17 @@ pub enum Severity {
     High,
     Critical,
 }
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct RiskSummary {
+    pub score: u8,
+    pub level: RiskLevel,
+    pub reason_count: usize,
+}
+#[derive(Debug, Clone, PartialEq)]
+pub enum RiskLevel {
+    Low,
+    Medium,
+    High,
+    Critical,
+}

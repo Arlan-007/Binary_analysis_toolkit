@@ -13,7 +13,7 @@ use format::pe::get_pe_metadata;
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
 use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
-use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections};
+use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections, detect_packed_binary};
 use crate::analysis::entropy::calculate_entropy;
 
 fn main() {
@@ -99,7 +99,12 @@ fn main() {
 
     let entropy_section = high_entropy_sections(&info.sections);
     println!("Found {} high entropy section", entropy_section.len());
-    for ent in entropy_section {
-        println!("{:#?}", ent);
+    // for ent in entropy_section {
+    //     println!("{:#?}", ent);
+    // }
+
+    let packed_binary = detect_packed_binary(&info.sections);
+    for bin in packed_binary {
+        println!("{:#?}", bin);
     }
 }

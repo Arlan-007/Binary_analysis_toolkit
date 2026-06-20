@@ -9,6 +9,7 @@ use crate::data::credential_signature::CREDENTIAL_RULES;
 use crate::data::section_signature::SECTION_RULES;
 use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
 use crate::analysis::entropy::calculate_entropy;
+use crate::data::section_entropy_signature::{is_entropy_suspicious, max_expected_entropy_for, MIN_ENTROPY_SECTION_SIZE, is_known_packer_section};
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -229,27 +230,120 @@ pub fn high_entropy_strings(strings: &[String], ) -> Vec<Finding> {
     findings
 }
 
-pub fn high_entropy_sections(sections: &[Section]) -> Vec<Finding> {
+pub fn high_entropy_sections(sections: &[Section], ) -> Vec<Finding> {
     let mut findings = Vec::new();
 
     for section in sections {
-        if section.bytes.len() < 512 {
+        if section.bytes.len() < MIN_ENTROPY_SECTION_SIZE {
             continue;
         }
 
         let entropy = calculate_entropy(&section.bytes);
-        if entropy >= 7 {
-            findings.push(Finding {
-                severity: Severity::Medium,
-                title: "High Entropy Section".to_string(),
-                category: "Entropy".to_string(),
-                description: format!(
-                    "Section '{}' has entropy {:.2}",
-                    section.name,
-                    entropy
-                ),
-            });
+        if !is_entropy_suspicious(&section.name, entropy) {
+            continue;
         }
+
+        let expected = max_expected_entropy_for(&section.name);
+        let delta = entropy - expected;
+
+        let severity = if entropy >= 7.60 {
+            Severity::High
+        } else if entropy >= 7.0 {
+            Severity::Medium
+        } else {
+            Severity::Low
+        };
+
+        findings.push(Finding {
+            severity,
+            title: "High Entropy Section".to_string(),
+            category: "Entropy".to_string(),
+            description: format!(
+                "Section '{}' has entropy {:.2} (expected <= {:.2}, delta {:.2})",
+                section.name,
+                entropy,
+                expected,
+                delta,
+            ),
+        });
+    }
+    findings
+}
+
+pub fn detect_packed_binary(sections: &[Section]) -> Vec<Finding> {
+    let mut findings = Vec::new();
+
+    let mut score: i32 = 0;
+    let mut high_entropy_sections = 0;
+    let mut suspicious_sections = 0;
+    let mut packer_named_sections = 0;
+
+    for section in sections {
+        if section.bytes.len() < MIN_ENTROPY_SECTION_SIZE {
+            continue;
+        }
+
+        let entropy = calculate_entropy(&section.bytes);
+        let expected = max_expected_entropy_for(&section.name);
+        let delta = entropy - expected;
+
+        let known_packer_name = is_known_packer_section(&section.name);
+        let entropy_above_baseline = delta > 0.75;
+        let very_high_entropy = entropy >= 7.5;
+
+        if known_packer_name {
+            score += 5;
+            packer_named_sections += 1;
+        }
+        if entropy_above_baseline {
+            score += 2;
+            suspicious_sections += 1;
+        }
+        if very_high_entropy {
+            score += 2;
+            high_entropy_sections += 1;
+        }
+        if delta > 1.5 {
+            score += 2;
+        }
+        if delta > 2.0 {
+            score += 1;
+        }
+    }
+
+    if high_entropy_sections >= 2 {
+        score += 2;
+    }
+    if suspicious_sections >= 2 {
+        score += 1;
+    }
+    if packer_named_sections >= 1 && high_entropy_sections >= 1 {
+        score += 2;
+    }
+
+    let severity = if score >= 12 {
+        Some(Severity::High)
+    } else if score >= 8 {
+        Some(Severity::Medium)
+    } else if score >= 5 {
+        Some(Severity::Low)
+    } else {
+        None
+    };
+
+    if let Some(severity) = severity {
+        findings.push(Finding {
+            severity,
+            title: "Likely Packed Binary".to_string(),
+            category: "Packing".to_string(),
+            description: format!(
+                "Packing indicators detected (score {}, high-entropy sections: {}, baseline-violating sections: {}, packer-named sections: {})",
+                score,
+                high_entropy_sections,
+                suspicious_sections,
+                packer_named_sections
+            ),
+        });
     }
     findings
 }

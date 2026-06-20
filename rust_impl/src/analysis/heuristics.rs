@@ -8,6 +8,7 @@ use crate::data::ip_signature::{IPV4_REGEX, PRIVATE_IP_PREFIXES, LOCAL_IPS};
 use crate::data::credential_signature::CREDENTIAL_RULES;
 use crate::data::section_signature::SECTION_RULES;
 use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
+use crate::analysis::entropy::calculate_entropy;
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -191,6 +192,63 @@ pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
                     ),
                 });
             }
+        }
+    }
+    findings
+}
+
+pub fn high_entropy_strings(strings: &[String], ) -> Vec<Finding> {
+    let mut findings = Vec::new();
+
+    for s in strings {
+        if s.len() < 32 {
+            continue;
+        }
+
+        let entropy = calculate_entropy(s.as_bytes());
+        if entropy >= 6.0 {
+            let severity_ = if entropy >= 7.0 {
+                Severity::High
+            } else if entropy >= 6.0 {
+                Severity::Medium
+            } else {
+                Severity::Low
+            };
+            findings.push(Finding {
+                severity: severity_,
+                title: "High Entropy String".to_string(),
+                category: "Encoded String".to_string(),
+                description: format!(
+                    "String has high entropy ({:.2}): {}",
+                    entropy,
+                    s
+                ),
+            });
+        }
+    }
+    findings
+}
+
+pub fn high_entropy_sections(sections: &[Section]) -> Vec<Finding> {
+    let mut findings = Vec::new();
+
+    for section in sections {
+        if section.bytes.len() < 512 {
+            continue;
+        }
+
+        let entropy = calculate_entropy(&section.bytes);
+        if entropy >= 7 {
+            findings.push(Finding {
+                severity: Severity::Medium,
+                title: "High Entropy Section".to_string(),
+                category: "Entropy".to_string(),
+                description: format!(
+                    "Section '{}' has entropy {:.2}",
+                    section.name,
+                    entropy
+                ),
+            });
         }
     }
     findings

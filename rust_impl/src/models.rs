@@ -5,13 +5,13 @@ pub enum BinaryFormat {
     MachO,
     Unknown,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct Section {
     pub name: String,
     pub address: u64,
     pub size: u64,
-    // pub bytes: Vec<u8>,
+    pub bytes: Vec<u8>,
 }
 #[derive(Debug)]
 #[allow(dead_code)]

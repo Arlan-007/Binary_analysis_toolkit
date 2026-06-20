@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 pub const URL_PREFIXES: &[&str] = &[
     "http://",
     "https://",

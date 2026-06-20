@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose, Engine};
-use regex::Regex;
 use hex;
 
 pub fn decode_base64(s: &str) -> Option<String> {

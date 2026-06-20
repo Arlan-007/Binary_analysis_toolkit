@@ -12,7 +12,9 @@ use format::pe::get_pe_metadata;
 
 use analysis::string::extract_strings;
 use analysis::import::get_imports;
-use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections, detect_encoded_strings};
+use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
+use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections};
+use crate::analysis::entropy::calculate_entropy;
 
 fn main() {
     let path = env::args()
@@ -39,7 +41,7 @@ fn main() {
             return;
         }
     };
-    println!("{:#?}", info);
+    // println!("{:#?}", info);
 
     let strings = extract_strings(&path).expect("Failed to extract strings");
     println!("Found {} strings", strings.len());
@@ -85,7 +87,19 @@ fn main() {
 
     let encodings = detect_encoded_strings(&strings);
     println!("Found {} encodings", encodings.len());
-    for encoding in encodings {
-        println!("{:#?}", encoding);
+    // for encoding in encodings {
+    //     println!("{:#?}", encoding);
+    // }
+
+    let entropy_string = high_entropy_strings(&strings);
+    println!("Found {} high entropy strings", entropy_string.len());
+    // for ent in entropy_string {
+    //     println!("{:#?}", ent);
+    // }
+
+    let entropy_section = high_entropy_sections(&info.sections);
+    println!("Found {} high entropy section", entropy_section.len());
+    for ent in entropy_section {
+        println!("{:#?}", ent);
     }
 }

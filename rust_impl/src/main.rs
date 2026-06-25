@@ -4,7 +4,7 @@ mod analysis;
 mod data;
 use std::env;
 
-use crate::models::BinaryFormat;
+use crate::models::{BinaryFormat, RiskSummary};
 
 use format::detect::detect_format;
 use format::elf::get_elf_metadata;
@@ -14,7 +14,8 @@ use analysis::string::extract_strings;
 use analysis::import::get_imports;
 use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
 use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections, detect_packed_binary};
-use crate::analysis::entropy::calculate_entropy;
+use analysis::risk::calculate_risk_score;
+use analysis::entropy::calculate_entropy;
 
 fn main() {
     let path = env::args()
@@ -104,7 +105,26 @@ fn main() {
     // }
 
     let packed_binary = detect_packed_binary(&info.sections);
-    for bin in packed_binary {
+    for bin in &packed_binary {
         println!("{:#?}", bin);
     }
+
+    let mut all_findings = Vec::new();
+
+    all_findings.extend(suspicious_imports.clone());
+    all_findings.extend(suspicious_url.clone());
+    all_findings.extend(suspicious_ip.clone());
+    all_findings.extend(credentials.clone());
+    all_findings.extend(suspicious_sections.clone());
+    all_findings.extend(encodings.clone());
+    all_findings.extend(entropy_string.clone());
+    all_findings.extend(entropy_section.clone());
+    all_findings.extend(packed_binary.clone());
+
+    // for finding in &all_findings {
+    //     println!("{:#?}", finding);
+    // }
+
+    let risk = calculate_risk_score(&all_findings,);
+    println!("{:#?}", risk);
 }

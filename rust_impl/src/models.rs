@@ -27,7 +27,7 @@ pub struct Import {
     pub library: String,
     pub function: String,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct Finding {
     pub severity: Severity,

@@ -7,16 +7,9 @@ pub struct RiskCategoryRule {
     pub aliases: &'static [&'static str],
     pub family: &'static str,
 
-    // Score for the first finding in this category.
     pub base_score: u32,
-
-    // Score added for each additional finding in the same category.
     pub incremental_score: u32,
-
-    // Hard cap for this category so repeated hits do not explode the score.
     pub category_cap: u32,
-
-    // Multiplier applied after category aggregation.
     pub multiplier: f64,
 
     pub notes: &'static str,

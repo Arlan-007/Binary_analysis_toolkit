@@ -20,12 +20,22 @@ fn risk_level_for_score(score: u32) -> RiskLevel {
     }
 }
 
+fn severity_rank(severity: &Severity) -> u8 {
+    match severity {
+        Severity::Low => 0,
+        Severity::Medium => 1,
+        Severity::High => 2,
+        Severity::Critical => 3,
+    }
+}
+
 pub fn calculate_risk_score(findings: &[Finding]) -> RiskSummary {
     if findings.is_empty() {
         return RiskSummary {
             score: 0,
             level: RiskLevel::Low,
             reason_count: 0,
+            category_scores: BTreeMap::new(),
         };
     }
 
@@ -35,39 +45,40 @@ pub fn calculate_risk_score(findings: &[Finding]) -> RiskSummary {
         grouped.entry(category).or_default().push(finding);
     }
 
-    let mut score: f64 = 0.0;
-    let mut reason_count = 0;
+    let mut total_score: f64 = 0.0;
+    let mut category_scores: BTreeMap<String, u32> = BTreeMap::new();
     for (category, group) in grouped {
-        reason_count += group.len();
-
         let rule = rule_for_category(&category);
-        let mut category_score = rule.base_score as f64;
 
         let highest_severity = group
             .iter()
+            .max_by_key(|f| severity_rank(&f.severity))
             .map(|f| &f.severity)
-            .max_by_key(|s| match s {
-                Severity::Low => 0,
-                Severity::Medium => 1,
-                Severity::High => 2,
-                Severity::Critical => 3,
-            })
             .unwrap_or(&Severity::Low);
 
+        let mut category_score = rule.base_score as f64;
         category_score *= severity_multiplier(highest_severity);
         if group.len() > 1 {
-            category_score += (group.len() as f64 - 1.0) * rule.incremental_score as f64 * 0.5;
+            let extra = (group.len() - 1) as f64;
+            category_score += extra * (rule.incremental_score as f64) * 0.5;
         }
+
         category_score *= rule.multiplier;
-        score += category_score.min(rule.category_cap as f64);
+
+        let capped_score = category_score.round() as u32;
+        let capped_score = capped_score.min(rule.category_cap);
+
+        category_scores.insert(category, capped_score);
+        total_score += capped_score as f64;
     }
 
-    let score = score.round() as u32.min(MAX_RISK_SCORE);
-    let level = risk_level_for_score(score);
+    let total_score = total_score.round() as u32;
+    let total_score = total_score.min(MAX_RISK_SCORE);
 
     RiskSummary {
-        score,
-        level,
-        reason_count,
+        score: total_score,
+        level: risk_level_for_score(total_score),
+        reason_count: findings.len(),
+        category_scores,
     }
 }

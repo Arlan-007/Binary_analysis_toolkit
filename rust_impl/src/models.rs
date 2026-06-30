@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 #[derive(Debug, PartialEq)]
 pub enum BinaryFormat {
     Elf,
@@ -45,9 +47,10 @@ pub enum Severity {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub struct RiskSummary {
-    pub score: u8,
+    pub score: u32,
     pub level: RiskLevel,
     pub reason_count: usize,
+    pub category_scores: BTreeMap<String, u32>,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum RiskLevel {

@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub struct SectionEntropyRule {
     pub pattern: &'static str,
     pub max_expected_entropy: f64,
@@ -6,6 +7,7 @@ pub struct SectionEntropyRule {
 }
 
 pub const DEFAULT_MAX_EXPECTED_ENTROPY: f64 = 7.0;
+#[allow(dead_code)]
 pub const PACKED_BINARY_ENTROPY_THRESHOLD: f64 = 7.20;
 pub const MIN_ENTROPY_SECTION_SIZE: usize = 512;
 
@@ -365,10 +367,6 @@ pub fn max_expected_entropy_for(section_name: &str) -> f64 {
         .unwrap_or(DEFAULT_MAX_EXPECTED_ENTROPY)
 }
 
-pub fn notes_for(section_name: &str) -> Option<&'static str> {
-    rule_for_section(section_name).map(|rule| rule.notes)
-}
-
 pub fn is_known_packer_section(section_name: &str) -> bool {
     PACKER_SECTION_NAMES
         .iter()
@@ -377,8 +375,4 @@ pub fn is_known_packer_section(section_name: &str) -> bool {
 
 pub fn is_entropy_suspicious(section_name: &str, entropy: f64) -> bool {
     entropy > max_expected_entropy_for(section_name)
-}
-
-pub fn is_likely_packed_section(section_name: &str, entropy: f64) -> bool {
-    is_known_packer_section(section_name) || entropy >= PACKED_BINARY_ENTROPY_THRESHOLD
 }

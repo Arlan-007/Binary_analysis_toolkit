@@ -4,7 +4,7 @@ mod analysis;
 mod data;
 use std::env;
 
-use crate::models::{BinaryFormat, RiskSummary};
+use crate::models::BinaryFormat;
 
 use format::detect::detect_format;
 use format::elf::get_elf_metadata;
@@ -15,7 +15,6 @@ use analysis::import::get_imports;
 use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
 use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections, detect_packed_binary};
 use analysis::risk::calculate_risk_score;
-use analysis::entropy::calculate_entropy;
 
 fn main() {
     let path = env::args()
@@ -121,9 +120,9 @@ fn main() {
     all_findings.extend(entropy_section.clone());
     all_findings.extend(packed_binary.clone());
 
-    // for finding in &all_findings {
-    //     println!("{:#?}", finding);
-    // }
+    for finding in &all_findings {
+        println!("{:#?}", finding);
+    }
 
     let risk = calculate_risk_score(&all_findings,);
     println!("{:#?}", risk);

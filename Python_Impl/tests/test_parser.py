@@ -16,6 +16,5 @@ class TestPEParser(unittest.TestCase):
         sections = self.parser.get_section_names()
         self.assertIn(".text", sections)
         self.assertIn(".data", sections)
-
 if __name__ == "__main__":
     unittest.main()

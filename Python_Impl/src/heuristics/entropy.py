@@ -20,6 +20,7 @@ def calculate_entropy(data: bytes) -> float:
 def check_file_entropy(file_path: str, threshold: float = 7.2) -> dict:
 
     try:
+
         path = Path(file_path)
         if not path.is_file():
             return {"error": "File not found", "is_suspicious": False}

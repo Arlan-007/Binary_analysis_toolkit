@@ -5,7 +5,7 @@ use crate::models::{Finding, Import, Severity, Section};
 use crate::data::import_signature::IMPORT_RULES;
 use crate::data::url_signature::{URL_REGEX, EXECUTABLE_EXTENSIONS};
 use crate::data::ip_signature::{IPV4_REGEX, PRIVATE_IP_PREFIXES, LOCAL_IPS};
-use crate::data::credential_signature::CREDENTIAL_RULES;
+use crate::data::credential_signature::{CREDENTIAL_RULES, is_plausible};
 use crate::data::section_signature::SECTION_RULES;
 use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
 use crate::analysis::entropy::calculate_entropy;
@@ -99,7 +99,6 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
 pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
-
     let compiled_rules: Vec<_> = CREDENTIAL_RULES
         .iter()
         .map(|rule| {
@@ -109,21 +108,36 @@ pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
                 .map(|pattern| Regex::new(pattern).unwrap())
                 .collect::<Vec<_>>();
 
-            (regexes, rule.severity.clone(), rule.category, rule.description)
+            (regexes, rule)
         })
         .collect();
 
     for string in strings {
-        for (regexes, severity, category, description) in &compiled_rules {
-            if regexes.iter().any(|re| re.is_match(string)) {
+        for (regexes, rule) in &compiled_rules {
+            let matched = if rule.requires_value {
+                regexes.iter().any(|re| {
+                    re.captures(string)
+                        .and_then(|caps| caps.get(1))
+                        .map(|value| is_plausible(value.as_str()))
+                        .unwrap_or(false)
+                })
+            } else {
+                regexes.iter().any(|re| re.is_match(string))
+            };
+
+            if matched {
                 if found.insert(string.clone()) {
                     findings.push(Finding {
-                        severity: severity.clone(),
-                        title: format!("Credential Indicator: {}", category),
-                        category: category.to_string(),
-                        description: format!("{} Matched string: {}", description, string),
+                        severity: rule.severity.clone(),
+                        title: format!("Credential Indicator: {}", rule.category),
+                        category: rule.category.to_string(),
+                        description: format!(
+                            "{} Matched string: {}",
+                            rule.description, string
+                        ),
                     });
                 }
+                break;
             }
         }
     }

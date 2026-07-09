@@ -8,7 +8,7 @@ use crate::data::ip_signature::{IPV4_REGEX, PRIVATE_IP_PREFIXES, LOCAL_IPS};
 use crate::data::credential_signature::{CREDENTIAL_RULES, is_plausible};
 use crate::data::section_signature::SECTION_RULES;
 use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
-use crate::analysis::entropy::calculate_entropy;
+use crate::analysis::entropy::{calculate_entropy, max_entropy_for_length};
 use crate::data::section_entropy_signature::{is_entropy_suspicious, max_expected_entropy_for, MIN_ENTROPY_SECTION_SIZE, is_known_packer_section};
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
@@ -212,34 +212,67 @@ pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
     findings
 }
 
-pub fn high_entropy_strings(strings: &[String], ) -> Vec<Finding> {
+// Normalized entropy ratio above which a printable string is treated as
+// suspicious. 0.85 means the string exhibits 85% of the maximum randomness
+// possible for its length. Normal text sits near 0.60-0.75, leaving a clear
+// margin. Kept inline like the original thresholds; move to a data/ signature
+// file later if you want to follow the data-vs-logic split strictly.
+const HIGH_ENTROPY_STRING_RATIO: f64 = 0.85;
+
+pub fn high_entropy_strings(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
+    let mut found: HashSet<String> = HashSet::new();
 
     for s in strings {
         if s.len() < 32 {
             continue;
         }
 
-        let entropy = calculate_entropy(s.as_bytes());
-        if entropy >= 6.0 {
-            let severity_ = if entropy >= 7.0 {
-                Severity::High
-            } else if entropy >= 6.0 {
-                Severity::Medium
-            } else {
-                Severity::Low
-            };
-            findings.push(Finding {
-                severity: severity_,
-                title: "High Entropy String".to_string(),
-                category: "Encoded String".to_string(),
-                description: format!(
-                    "String has high entropy ({:.2}): {}",
-                    entropy,
-                    s
-                ),
-            });
+        // Base64 and hex blobs are already reported by detect_encoded_strings
+        // in this same "Encoded String" category. Skip them here so a single
+        // encoded string is not counted twice (avoids over-amplifying the
+        // finding count and the category's risk contribution).
+        if is_base64(s) || is_hex(s) {
+            continue;
         }
+
+        let entropy = calculate_entropy(s.as_bytes());
+        let max_entropy = max_entropy_for_length(s.len());
+        if max_entropy <= 0.0 {
+            continue;
+        }
+
+        // Normalize so the threshold is length-independent. The old raw
+        // threshold of 6.0 bits was unreachable for strings under 64 chars
+        // (Shannon entropy is bounded by log2(len)), which made this heuristic
+        // dead code for short strings.
+        let ratio = entropy / max_entropy;
+        if ratio < HIGH_ENTROPY_STRING_RATIO {
+            continue;
+        }
+
+        // Report each distinct string only once.
+        if !found.insert(s.clone()) {
+            continue;
+        }
+
+        let severity = if ratio >= 0.92 {
+            Severity::High
+        } else {
+            Severity::Medium
+        };
+
+        findings.push(Finding {
+            severity,
+            title: "High Entropy String".to_string(),
+            category: "Encoded String".to_string(),
+            description: format!(
+                "String has high entropy ({:.2} bits, {:.0}% of max): {}",
+                entropy,
+                ratio * 100.0,
+                s
+            ),
+        });
     }
     findings
 }

@@ -3,3 +3,4 @@ pub mod import;
 pub mod heuristics;
 pub mod entropy;
 pub mod risk;
+pub mod symbol;

@@ -11,7 +11,8 @@ use format::elf::get_elf_metadata;
 use format::pe::get_pe_metadata;
 
 use analysis::string::extract_strings;
-use analysis::import::get_imports;
+use analysis::import::{get_imports, get_needed_libraries};
+use analysis::symbol::{get_exports, get_symbols};
 use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
 use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections, detect_packed_binary};
 use analysis::risk::calculate_risk_score;
@@ -51,8 +52,22 @@ fn main() {
 
     let imports = get_imports(&path , fmt).expect("Failed to extract imports");
     println!("Found {} imports", imports.len());
-    // for import in imports {
-    //     println!("{:#?}", import);
+    let needed_libraries = get_needed_libraries(&path, fmt).expect("Failed to read needed libraries");
+    println!("Found {} needed libraries", needed_libraries.len());
+    // for lib in &needed_libraries {
+    //     println!("  needs {}", lib);
+    // }
+
+    let exports = get_exports(&path, fmt).expect("Failed to extract exports");
+    println!("Found {} exports", exports.len());
+    // for export in &exports {
+    //     println!("{:#?}", export);
+    // }
+
+    let symbols = get_symbols(&path, fmt).expect("Failed to extract symbols");
+    println!("Found {} symbols", symbols.len());
+    // for symbol in &symbols {
+    //     println!("{:#?}", symbol);
     // }
 
     let suspicious_imports = suspicious_imports(&imports);

@@ -59,3 +59,17 @@ pub enum RiskLevel {
     High,
     Critical,
 }
+#[derive(Debug, Clone, PartialEq)]
+pub enum SymbolKind {
+    Function,
+    Object,
+    Other,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct Symbol {
+    pub name: String,
+    pub address: u64,
+    pub kind: SymbolKind,
+}

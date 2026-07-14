@@ -17,7 +17,16 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="Added format detection and mounting.&#10;also added one sample for elf/pe each." />
+    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="Added format detection and mounting.&#10;also added one sample for elf/pe each.">
+      <change afterPath="$PROJECT_DIR$/rust_impl/src/analysis/symbol.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/entropy.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/entropy.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/import.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/import.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/mod.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/models.rs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,7 +52,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/Arlan-007/Binary_analysis_toolkit.git&quot;,
-    &quot;accountId&quot;: &quot;cba00334-f43f-477e-bdbb-218a1316c39b&quot;
+    &quot;accountId&quot;: &quot;5b4baeaa-5a16-419c-bd3f-23e7f6bb03a4&quot;
   }
 }</component>
   <component name="MacroExpansionManager">
@@ -67,6 +76,8 @@
     &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.rust.reset.selective.auto.import&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
@@ -81,6 +92,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
     &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -111,6 +123,9 @@
       <method v="2" />
     </configuration>
   </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -131,6 +146,9 @@
       <workItem from="1781369744122" duration="4016000" />
       <workItem from="1781440936931" duration="4757000" />
       <workItem from="1782838695950" duration="1084000" />
+      <workItem from="1783361433036" duration="587000" />
+      <workItem from="1783428788061" duration="8536000" />
+      <workItem from="1783948204666" duration="8189000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Setup">
       <option name="closed" value="true" />

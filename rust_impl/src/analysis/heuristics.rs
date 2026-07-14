@@ -212,11 +212,6 @@ pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
     findings
 }
 
-// Normalized entropy ratio above which a printable string is treated as
-// suspicious. 0.85 means the string exhibits 85% of the maximum randomness
-// possible for its length. Normal text sits near 0.60-0.75, leaving a clear
-// margin. Kept inline like the original thresholds; move to a data/ signature
-// file later if you want to follow the data-vs-logic split strictly.
 const HIGH_ENTROPY_STRING_RATIO: f64 = 0.85;
 
 pub fn high_entropy_strings(strings: &[String]) -> Vec<Finding> {
@@ -227,11 +222,6 @@ pub fn high_entropy_strings(strings: &[String]) -> Vec<Finding> {
         if s.len() < 32 {
             continue;
         }
-
-        // Base64 and hex blobs are already reported by detect_encoded_strings
-        // in this same "Encoded String" category. Skip them here so a single
-        // encoded string is not counted twice (avoids over-amplifying the
-        // finding count and the category's risk contribution).
         if is_base64(s) || is_hex(s) {
             continue;
         }
@@ -242,16 +232,11 @@ pub fn high_entropy_strings(strings: &[String]) -> Vec<Finding> {
             continue;
         }
 
-        // Normalize so the threshold is length-independent. The old raw
-        // threshold of 6.0 bits was unreachable for strings under 64 chars
-        // (Shannon entropy is bounded by log2(len)), which made this heuristic
-        // dead code for short strings.
         let ratio = entropy / max_entropy;
         if ratio < HIGH_ENTROPY_STRING_RATIO {
             continue;
         }
 
-        // Report each distinct string only once.
         if !found.insert(s.clone()) {
             continue;
         }

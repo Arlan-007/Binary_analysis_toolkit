@@ -18,7 +18,7 @@ pub fn get_imports(path: &str , fmt: BinaryFormat) -> Result<Vec<Import>, Box<dy
                     continue;
                 }
                 imports.push(Import {
-                    library: import.to_string(),
+                    library: String::new(),
                     function: import.to_string(),
                 });
             }

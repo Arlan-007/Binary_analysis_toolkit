@@ -302,7 +302,7 @@ pub fn high_entropy_sections(sections: &[Section], ) -> Vec<Finding> {
     findings
 }
 
-pub fn detect_packed_binary(sections: &[Section]) -> Vec<Finding> {
+pub fn detect_packed_binary(sections: &[Section], stripped: bool) -> Vec<Finding> {
     let mut findings = Vec::new();
 
     let mut score: i32 = 0;
@@ -353,6 +353,11 @@ pub fn detect_packed_binary(sections: &[Section]) -> Vec<Finding> {
         score += 2;
     }
 
+    let stripped_amplified = stripped && (high_entropy_sections >= 1 || suspicious_sections >= 1);
+    if stripped_amplified {
+        score += 2;
+    }
+
     let severity = if score >= 12 {
         Some(Severity::High)
     } else if score >= 8 {
@@ -369,11 +374,12 @@ pub fn detect_packed_binary(sections: &[Section]) -> Vec<Finding> {
             title: "Likely Packed Binary".to_string(),
             category: "Packing".to_string(),
             description: format!(
-                "Packing indicators detected (score {}, high-entropy sections: {}, baseline-violating sections: {}, packer-named sections: {})",
+                "Packing indicators detected (score {}, high-entropy sections: {}, baseline-violating sections: {}, packer-named sections: {}, stripped: {})",
                 score,
                 high_entropy_sections,
                 suspicious_sections,
-                packer_named_sections
+                packer_named_sections,
+                stripped_amplified
             ),
         });
     }

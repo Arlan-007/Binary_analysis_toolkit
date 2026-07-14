@@ -54,21 +54,21 @@ fn main() {
     println!("Found {} imports", imports.len());
     let needed_libraries = get_needed_libraries(&path, fmt).expect("Failed to read needed libraries");
     println!("Found {} needed libraries", needed_libraries.len());
-    // for lib in &needed_libraries {
-    //     println!("  needs {}", lib);
-    // }
+    for lib in &needed_libraries {
+        println!("  needs {}", lib);
+    }
 
     let exports = get_exports(&path, fmt).expect("Failed to extract exports");
     println!("Found {} exports", exports.len());
-    // for export in &exports {
-    //     println!("{:#?}", export);
-    // }
+    for export in &exports {
+        println!("{:#?}", export);
+    }
 
     let symbols = get_symbols(&path, fmt).expect("Failed to extract symbols");
     println!("Found {} symbols", symbols.len());
-    // for symbol in &symbols {
-    //     println!("{:#?}", symbol);
-    // }
+    for symbol in &symbols {
+        println!("{:#?}", symbol);
+    }
 
     let suspicious_imports = suspicious_imports(&imports);
     println!("Found {} suspicious imports", suspicious_imports.len());

@@ -17,15 +17,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="Added format detection and mounting.&#10;also added one sample for elf/pe each.">
-      <change afterPath="$PROJECT_DIR$/rust_impl/src/analysis/symbol.rs" afterDir="false" />
+    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="added symbol extraction and improved import extract for elf.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/entropy.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/entropy.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/import.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/import.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/mod.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/models.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/models.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -148,7 +144,7 @@
       <workItem from="1782838695950" duration="1084000" />
       <workItem from="1783361433036" duration="587000" />
       <workItem from="1783428788061" duration="8536000" />
-      <workItem from="1783948204666" duration="8189000" />
+      <workItem from="1783948204666" duration="9952000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Setup">
       <option name="closed" value="true" />
@@ -174,7 +170,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781370236396</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="added symbol extraction and improved import extract for elf.">
+      <option name="closed" value="true" />
+      <created>1784032918769</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1784032918769</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -183,6 +187,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial Setup" />
     <MESSAGE value="Added format detection and mounting.&#10;also added one sample for elf/pe each." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added format detection and mounting.&#10;also added one sample for elf/pe each." />
+    <MESSAGE value="added symbol extraction and improved import extract for elf." />
+    <option name="LAST_COMMIT_MESSAGE" value="added symbol extraction and improved import extract for elf." />
   </component>
 </project>

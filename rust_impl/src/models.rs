@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum BinaryFormat {
     Elf,
     Pe,

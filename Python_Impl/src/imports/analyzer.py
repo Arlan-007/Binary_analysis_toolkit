@@ -8,6 +8,7 @@ def get_imports(path):
         pe = pefile.PE(path)
         imports = []
 
+
         if hasattr(pe, "DIRECTORY_ENTRY_IMPORT"):
             for dll in pe.DIRECTORY_ENTRY_IMPORT:
                 dll_name = dll.dll.decode()
@@ -36,5 +37,6 @@ def get_imports(path):
                     imports.append({
                         "function": symbol.name
                     })
+
 
         return imports

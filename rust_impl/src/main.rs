@@ -1,144 +1,316 @@
-mod models;
-mod format;
-mod analysis;
-mod data;
-use std::env;
+use std::error::Error;
+use std::path::PathBuf;
 
-use crate::models::BinaryFormat;
+use clap::{Parser, ValueEnum};
+use rust_impl::analysis::heuristics::{
+    detect_encoded_strings, detect_packed_binary, high_entropy_sections, high_entropy_strings,
+    suspicious_credentials, suspicious_imports, suspicious_ip, suspicious_sections, suspicious_url,
+};
+use rust_impl::analysis::import::{get_imports, get_needed_libraries};
+use rust_impl::analysis::risk::calculate_risk_score;
+use rust_impl::analysis::string::extract_strings;
+use rust_impl::analysis::symbol::{get_exports, get_symbols};
+use rust_impl::disarm::{
+    DisassemblyError, DisassemblyOptions, SymbolLabels, analyze_instructions, build_symbol_labels,
+    disassemble_at, disassemble_from_entrypoint, disassemble_text, extract_code_features,
+    symbol_address,
+};
+use rust_impl::format::detect::detect_format;
+use rust_impl::format::elf::get_elf_metadata;
+use rust_impl::format::pe::get_pe_metadata;
+use rust_impl::models::{BinaryFormat, BinaryInfo, CodeFeatures, Disassembly, Finding};
 
-use format::detect::detect_format;
-use format::elf::get_elf_metadata;
-use format::pe::get_pe_metadata;
+const CODE_SCAN_MAX_BYTES: usize = 1_048_576;
+const CODE_SCAN_MAX_INSTRUCTIONS: usize = 100_000;
 
-use analysis::string::extract_strings;
-use analysis::import::{get_imports, get_needed_libraries};
-use analysis::symbol::{get_exports, get_symbols};
-use analysis::heuristics::{suspicious_imports, suspicious_url, suspicious_ip, suspicious_credentials, suspicious_sections};
-use analysis::heuristics::{detect_encoded_strings, high_entropy_strings, high_entropy_sections, detect_packed_binary};
-use analysis::risk::calculate_risk_score;
+#[derive(Debug, Parser)]
+#[command(about = "Static binary-analysis toolkit with bounded Capstone disassembly")]
+struct Cli {
+    /// Path to the binary to analyze.
+    binary: PathBuf,
+
+    /// Optional disassembly target. Omit this to show analysis without an instruction listing.
+    #[arg(long, value_enum)]
+    disasm: Option<DisassemblyTarget>,
+
+    /// Starting address for `--disasm address` (decimal or 0x-prefixed hexadecimal).
+    #[arg(long, value_parser = parse_address)]
+    address: Option<u64>,
+
+    /// Exact symbol/export name for `--disasm symbol`.
+    #[arg(long)]
+    symbol: Option<String>,
+
+    /// Maximum number of bytes shown by an explicit disassembly request.
+    #[arg(long, default_value_t = 4096)]
+    max_bytes: usize,
+
+    /// Maximum number of instructions shown by an explicit disassembly request.
+    #[arg(long, default_value_t = 200)]
+    max_instructions: usize,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum DisassemblyTarget {
+    Text,
+    Entrypoint,
+    Address,
+    Symbol,
+}
 
 fn main() {
-    let path = env::args()
-        .nth(1)
-        .expect("Usage: cargo run -- <binary>");
+    if let Err(error) = run(Cli::parse()) {
+        eprintln!("error: {error}");
+        std::process::exit(1);
+    }
+}
 
-    let fmt = match detect_format(&path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("{}", e);
-            return;
-        }
+fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
+    validate_cli(&cli)?;
+
+    let path = cli.binary.to_string_lossy();
+    let format = detect_format(&path)?;
+    let info = match format {
+        BinaryFormat::Elf => get_elf_metadata(&path)?,
+        BinaryFormat::Pe => get_pe_metadata(&path)?,
+        BinaryFormat::MachO => return Err("Mach-O analysis is not implemented".into()),
+        BinaryFormat::Unknown => return Err("unknown binary format".into()),
     };
 
-    let info = match fmt {
-        BinaryFormat::Elf => get_elf_metadata(&path).expect("Failed to extract metadata"),
-        BinaryFormat::Pe => get_pe_metadata(&path).expect("Failed to extract metadata"),
-        BinaryFormat::MachO => {
-            eprintln!("Mach-O not implemented");
-            return;
-        }
-        BinaryFormat::Unknown => {
-            eprintln!("Unknown format");
-            return;
-        }
-    };
-    // println!("{:#?}", info);
+    let strings = extract_strings(&path)?;
+    let imports = get_imports(&path, format)?;
+    let needed_libraries = get_needed_libraries(&path, format)?;
+    let exports = get_exports(&path, format)?;
+    let symbols = get_symbols(&path, format)?;
+    let labels = build_symbol_labels(&symbols, &exports);
 
-    let strings = extract_strings(&path).expect("Failed to extract strings");
+    println!("Format: {:?}", info.format);
+    println!("Architecture: {}", info.architecture);
+    println!("Entrypoint: 0x{:x}", info.entrypoint);
     println!("Found {} strings", strings.len());
-    // for string in strings {
-    //     println!("{}", string);
-    // }
-
-    let imports = get_imports(&path , fmt).expect("Failed to extract imports");
     println!("Found {} imports", imports.len());
-    let needed_libraries = get_needed_libraries(&path, fmt).expect("Failed to read needed libraries");
     println!("Found {} needed libraries", needed_libraries.len());
-    for lib in &needed_libraries {
-        println!("  needs {}", lib);
+    for library in &needed_libraries {
+        println!("  needs {library}");
     }
-
-    let exports = get_exports(&path, fmt).expect("Failed to extract exports");
     println!("Found {} exports", exports.len());
-    for export in &exports {
-        println!("{:#?}", export);
-    }
-
-    let symbols = get_symbols(&path, fmt).expect("Failed to extract symbols");
     println!("Found {} symbols", symbols.len());
-    for symbol in &symbols {
-        println!("{:#?}", symbol);
-    }
 
     let suspicious_imports = suspicious_imports(&imports);
-    println!("Found {} suspicious imports", suspicious_imports.len());
-    // for import in suspicious_imports {
-    //     println!("{:#?}", import);
-    // }
-
     let suspicious_url = suspicious_url(&strings);
-    println!("Found {} URL", suspicious_url.len());
-    // for url in suspicious_url {
-    //     println!("{:#?}", url);
-    // }
-
     let suspicious_ip = suspicious_ip(&strings);
-    println!("Found {} IPs", suspicious_ip.len());
-    // for ip in suspicious_ip {
-    //     println!("{:#?}", ip);
-    // }
-
     let credentials = suspicious_credentials(&strings);
-    println!("Found {} credentials", credentials.len());
-    // for credential in credentials {
-    //     println!("{:#?}", credential);
-    // }
-
     let suspicious_sections = suspicious_sections(&info.sections);
-    println!("Found {} Suspicious Sections", suspicious_sections.len());
-    // for sections in suspicious_sections {
-    //     println!("{:#?}", sections);
-    // }
-
     let encodings = detect_encoded_strings(&strings);
-    println!("Found {} encodings", encodings.len());
-    // for encoding in encodings {
-    //     println!("{:#?}", encoding);
-    // }
-
     let entropy_string = high_entropy_strings(&strings);
-    println!("Found {} high entropy strings", entropy_string.len());
-    // for ent in entropy_string {
-    //     println!("{:#?}", ent);
-    // }
-
     let entropy_section = high_entropy_sections(&info.sections);
-    println!("Found {} high entropy section", entropy_section.len());
-    // for ent in entropy_section {
-    //     println!("{:#?}", ent);
-    // }
-
-    let packed_binary = detect_packed_binary(&info.sections);
-    for bin in &packed_binary {
-        println!("{:#?}", bin);
-    }
+    let is_stripped = match format {
+        BinaryFormat::Elf => symbols.is_empty(),
+        BinaryFormat::Pe | BinaryFormat::MachO | BinaryFormat::Unknown => false,
+    };
+    let packed_binary = detect_packed_binary(&info.sections, is_stripped);
 
     let mut all_findings = Vec::new();
+    all_findings.extend(suspicious_imports);
+    all_findings.extend(suspicious_url);
+    all_findings.extend(suspicious_ip);
+    all_findings.extend(credentials);
+    all_findings.extend(suspicious_sections);
+    all_findings.extend(encodings);
+    all_findings.extend(entropy_string);
+    all_findings.extend(entropy_section);
+    all_findings.extend(packed_binary);
 
-    all_findings.extend(suspicious_imports.clone());
-    all_findings.extend(suspicious_url.clone());
-    all_findings.extend(suspicious_ip.clone());
-    all_findings.extend(credentials.clone());
-    all_findings.extend(suspicious_sections.clone());
-    all_findings.extend(encodings.clone());
-    all_findings.extend(entropy_string.clone());
-    all_findings.extend(entropy_section.clone());
-    all_findings.extend(packed_binary.clone());
-
-    for finding in &all_findings {
-        println!("{:#?}", finding);
+    if let Some((instruction_findings, features)) = scan_code(&info, &labels)? {
+        print_code_features(&features);
+        all_findings.extend(instruction_findings);
     }
 
-    let risk = calculate_risk_score(&all_findings,);
-    println!("{:#?}", risk);
+    if let Some(target) = cli.disasm {
+        let options = DisassemblyOptions {
+            max_bytes: cli.max_bytes,
+            max_instructions: cli.max_instructions,
+        };
+        let disassembly = select_disassembly(&info, &labels, target, &cli, options)?;
+        print_disassembly(&disassembly, &labels);
+    }
+
+    print_findings(&all_findings);
+    println!("Risk summary: {:#?}", calculate_risk_score(&all_findings));
+    Ok(())
+}
+
+fn validate_cli(cli: &Cli) -> Result<(), DisassemblyError> {
+    if cli.max_bytes == 0 || cli.max_instructions == 0 {
+        return Err(DisassemblyError::InvalidRequest(
+            "--max-bytes and --max-instructions must be greater than zero".to_string(),
+        ));
+    }
+
+    match cli.disasm {
+        None if cli.address.is_some() || cli.symbol.is_some() => {
+            Err(DisassemblyError::InvalidRequest(
+                "--address and --symbol require a corresponding --disasm target".to_string(),
+            ))
+        }
+        Some(DisassemblyTarget::Text | DisassemblyTarget::Entrypoint)
+            if cli.address.is_some() || cli.symbol.is_some() =>
+        {
+            Err(DisassemblyError::InvalidRequest(
+                "--address and --symbol do not apply to this disassembly target".to_string(),
+            ))
+        }
+        Some(DisassemblyTarget::Address) if cli.address.is_none() => Err(
+            DisassemblyError::InvalidRequest("--disasm address requires --address".to_string()),
+        ),
+        Some(DisassemblyTarget::Address) if cli.symbol.is_some() => {
+            Err(DisassemblyError::InvalidRequest(
+                "--symbol can only be used with --disasm symbol".to_string(),
+            ))
+        }
+        Some(DisassemblyTarget::Symbol) if cli.symbol.is_none() => Err(
+            DisassemblyError::InvalidRequest("--disasm symbol requires --symbol NAME".to_string()),
+        ),
+        Some(DisassemblyTarget::Symbol) if cli.address.is_some() => {
+            Err(DisassemblyError::InvalidRequest(
+                "--address can only be used with --disasm address".to_string(),
+            ))
+        }
+        _ => Ok(()),
+    }
+}
+
+fn scan_code(
+    info: &BinaryInfo,
+    labels: &SymbolLabels,
+) -> Result<Option<(Vec<Finding>, CodeFeatures)>, DisassemblyError> {
+    let options = DisassemblyOptions {
+        max_bytes: CODE_SCAN_MAX_BYTES,
+        max_instructions: CODE_SCAN_MAX_INSTRUCTIONS,
+    };
+
+    match disassemble_text(info, labels, options) {
+        Ok(disassembly) => {
+            let findings =
+                analyze_instructions(info.format, &info.architecture, &disassembly.instructions);
+            let features = extract_code_features(&disassembly.instructions, &findings);
+            Ok(Some((findings, features)))
+        }
+        Err(
+            error @ (DisassemblyError::UnsupportedArchitecture(_)
+            | DisassemblyError::MissingTextSection
+            | DisassemblyError::NoInstructionsDecoded),
+        ) => {
+            eprintln!("Code scan skipped: {error}");
+            Ok(None)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn select_disassembly(
+    info: &BinaryInfo,
+    labels: &SymbolLabels,
+    target: DisassemblyTarget,
+    cli: &Cli,
+    options: DisassemblyOptions,
+) -> Result<Disassembly, DisassemblyError> {
+    match target {
+        DisassemblyTarget::Text => disassemble_text(info, labels, options),
+        DisassemblyTarget::Entrypoint => disassemble_from_entrypoint(info, labels, options),
+        DisassemblyTarget::Address => {
+            let address = cli.address.ok_or_else(|| {
+                DisassemblyError::InvalidRequest("--disasm address requires --address".to_string())
+            })?;
+            disassemble_at(info, address, labels, options)
+        }
+        DisassemblyTarget::Symbol => {
+            let symbol = cli.symbol.as_deref().ok_or_else(|| {
+                DisassemblyError::InvalidRequest(
+                    "--disasm symbol requires --symbol NAME".to_string(),
+                )
+            })?;
+            let address = symbol_address(labels, symbol)
+                .ok_or_else(|| DisassemblyError::MissingSymbol(symbol.to_string()))?;
+            disassemble_at(info, address, labels, options)
+        }
+    }
+}
+
+fn print_disassembly(disassembly: &Disassembly, labels: &SymbolLabels) {
+    println!(
+        "Disassembly: {} from {} 0x{:x} (decoded {} of {} input bytes; {} instructions)",
+        disassembly.section_name,
+        disassembly.address_kind.short_name(),
+        disassembly.start_address,
+        disassembly.decoded_byte_count,
+        disassembly.input_byte_count,
+        disassembly.instructions.len(),
+    );
+    for instruction in &disassembly.instructions {
+        if let Some(label) = &instruction.symbol_label {
+            println!("{label}:");
+        }
+        let bytes = instruction
+            .bytes
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let target = instruction
+            .branch_target
+            .map(|address| branch_annotation(address, labels))
+            .unwrap_or_default();
+        println!(
+            "  {} 0x{:016x}  {:<24} {:<10} {}{}",
+            disassembly.address_kind.short_name(),
+            instruction.address,
+            bytes,
+            instruction.mnemonic,
+            instruction.operands,
+            target,
+        );
+    }
+}
+
+fn branch_annotation(address: u64, labels: &SymbolLabels) -> String {
+    match labels.get(&address) {
+        Some(names) => format!("    ; -> {}", names.join(" | ")),
+        None => format!("    ; -> 0x{address:x}"),
+    }
+}
+
+fn print_code_features(features: &CodeFeatures) {
+    println!(
+        "Code features: instructions={} calls={} branches={} returns={} syscalls={} traps={} timing={} anti_debug={}",
+        features.instruction_count,
+        features.call_count,
+        features.branch_count,
+        features.return_count,
+        features.syscall_count,
+        features.trap_count,
+        features.timing_instruction_count,
+        features.anti_debug_pattern_count,
+    );
+}
+
+fn print_findings(findings: &[Finding]) {
+    println!("Findings: {}", findings.len());
+    for finding in findings {
+        println!(
+            "  [{:?}] {} / {} — {}",
+            finding.severity, finding.category, finding.title, finding.description
+        );
+    }
+}
+
+fn parse_address(value: &str) -> Result<u64, String> {
+    let trimmed = value.trim();
+    let hexadecimal = trimmed
+        .strip_prefix("0x")
+        .or_else(|| trimmed.strip_prefix("0X"));
+    match hexadecimal {
+        Some(value) => u64::from_str_radix(value, 16).map_err(|error| error.to_string()),
+        None => trimmed.parse::<u64>().map_err(|error| error.to_string()),
+    }
 }

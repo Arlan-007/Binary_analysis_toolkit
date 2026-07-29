@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use hex;
 
 pub fn decode_base64(s: &str) -> Option<String> {
@@ -10,7 +10,7 @@ pub fn is_base64(s: &str) -> bool {
     if s.len() < 16 {
         return false;
     }
-    if s.len() % 4 != 0 {
+    if !s.len().is_multiple_of(4) {
         return false;
     }
     let decoded = match general_purpose::STANDARD.decode(s) {
@@ -38,7 +38,7 @@ pub fn is_hex(s: &str) -> bool {
     if s.len() < 16 {
         return false;
     }
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return false;
     }
     let decoded = match hex::decode(s) {

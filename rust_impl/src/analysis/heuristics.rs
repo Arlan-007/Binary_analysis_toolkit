@@ -1,15 +1,18 @@
-use std::collections::HashSet;
 use regex::Regex;
+use std::collections::HashSet;
 
-use crate::models::{Finding, Import, Severity, Section};
-use crate::data::import_signature::IMPORT_RULES;
-use crate::data::url_signature::{URL_REGEX, EXECUTABLE_EXTENSIONS};
-use crate::data::ip_signature::{IPV4_REGEX, PRIVATE_IP_PREFIXES, LOCAL_IPS};
-use crate::data::credential_signature::{CREDENTIAL_RULES, is_plausible};
-use crate::data::section_signature::SECTION_RULES;
-use crate::data::encoding_signature::{is_base64, decode_base64, is_hex, decode_hex};
 use crate::analysis::entropy::{calculate_entropy, max_entropy_for_length};
-use crate::data::section_entropy_signature::{is_entropy_suspicious, max_expected_entropy_for, MIN_ENTROPY_SECTION_SIZE, is_known_packer_section};
+use crate::data::credential_signature::{CREDENTIAL_RULES, is_plausible};
+use crate::data::encoding_signature::{decode_base64, decode_hex, is_base64, is_hex};
+use crate::data::import_signature::IMPORT_RULES;
+use crate::data::ip_signature::{IPV4_REGEX, LOCAL_IPS, PRIVATE_IP_PREFIXES};
+use crate::data::section_entropy_signature::{
+    MIN_ENTROPY_SECTION_SIZE, is_entropy_suspicious, is_known_packer_section,
+    max_expected_entropy_for,
+};
+use crate::data::section_signature::SECTION_RULES;
+use crate::data::url_signature::{EXECUTABLE_EXTENSIONS, URL_REGEX};
+use crate::models::{Finding, Import, Section, Severity};
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -70,12 +73,11 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
             let ip = m.as_str().to_string();
 
             if found.insert(ip.clone()) {
-                let severity = if LOCAL_IPS.contains(&ip.as_str()) {
-                    Severity::Low
-                } else if PRIVATE_IP_PREFIXES
-                    .iter()
-                    .any(|prefix| ip.starts_with(prefix))
-                {
+                let is_local = LOCAL_IPS.contains(&ip.as_str())
+                    || PRIVATE_IP_PREFIXES
+                        .iter()
+                        .any(|prefix| ip.starts_with(prefix));
+                let severity = if is_local {
                     Severity::Low
                 } else {
                     Severity::Medium
@@ -84,17 +86,13 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
                     severity,
                     category: "Networking".to_string(),
                     title: ip.clone(),
-                    description: format!(
-                        "Found embedded IPv4 address: {}",
-                        ip
-                    ),
+                    description: format!("Found embedded IPv4 address: {}", ip),
                 });
             }
         }
     }
     findings
 }
-
 
 pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -131,10 +129,7 @@ pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
                         severity: rule.severity.clone(),
                         title: format!("Credential Indicator: {}", rule.category),
                         category: rule.category.to_string(),
-                        description: format!(
-                            "{} Matched string: {}",
-                            rule.description, string
-                        ),
+                        description: format!("{} Matched string: {}", rule.description, string),
                     });
                 }
                 break;
@@ -156,25 +151,21 @@ pub fn suspicious_sections(sections: &[Section]) -> Vec<Finding> {
                 .names
                 .iter()
                 .any(|name| section_name == *name || section_name.contains(name))
+                && seen.insert(section_name.clone())
             {
-                if seen.insert(section_name.clone()) {
-                    findings.push(Finding {
-                        severity: rule.severity.clone(),
-                        title: format!("Suspicious Section: {}", section.name),
-                        category: rule.category.to_string(),
-                        description: format!(
-                            "{} Matched section: {}",
-                            rule.description, section.name
-                        ),
-                    });
-                }
+                findings.push(Finding {
+                    severity: rule.severity.clone(),
+                    title: format!("Suspicious Section: {}", section.name),
+                    category: rule.category.to_string(),
+                    description: format!("{} Matched section: {}", rule.description, section.name),
+                });
             }
         }
     }
     findings
 }
 
-pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
+pub fn detect_encoded_strings(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
 
@@ -188,8 +179,7 @@ pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
                     category: "Encoded String".to_string(),
                     description: format!(
                         "Base64 string detected\nEncoded: {}\nDecoded: {}",
-                        s,
-                        decoded
+                        s, decoded
                     ),
                 });
             }
@@ -202,8 +192,7 @@ pub fn detect_encoded_strings(strings: &[String], ) -> Vec<Finding> {
                     category: "Encoded String".to_string(),
                     description: format!(
                         "Hex encoded string detected\nEncoded: {}\nDecoded: {}",
-                        s,
-                        decoded
+                        s, decoded
                     ),
                 });
             }
@@ -262,7 +251,7 @@ pub fn high_entropy_strings(strings: &[String]) -> Vec<Finding> {
     findings
 }
 
-pub fn high_entropy_sections(sections: &[Section], ) -> Vec<Finding> {
+pub fn high_entropy_sections(sections: &[Section]) -> Vec<Finding> {
     let mut findings = Vec::new();
 
     for section in sections {
@@ -292,10 +281,7 @@ pub fn high_entropy_sections(sections: &[Section], ) -> Vec<Finding> {
             category: "Entropy".to_string(),
             description: format!(
                 "Section '{}' has entropy {:.2} (expected <= {:.2}, delta {:.2})",
-                section.name,
-                entropy,
-                expected,
-                delta,
+                section.name, entropy, expected, delta,
             ),
         });
     }

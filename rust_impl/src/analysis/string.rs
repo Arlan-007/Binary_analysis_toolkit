@@ -1,3 +1,4 @@
+const MIN_ASCII_STRING_LEN: usize = 6;
 const MIN_WIDE_STRING_LEN: usize = 6;
 
 pub fn extract_strings(path: &str) -> std::io::Result<Vec<String>> {
@@ -15,14 +16,14 @@ fn extract_ascii(bytes: &[u8]) -> Vec<String> {
         if byte.is_ascii_graphic() || byte == b' ' {
             current.push(byte as char);
         } else {
-            if current.len() >= 6 {
+            if current.len() >= MIN_ASCII_STRING_LEN {
                 strings.push(current.clone());
             }
             current.clear();
         }
     }
 
-    if current.len() >= 4 {
+    if current.len() >= MIN_ASCII_STRING_LEN {
         strings.push(current);
     }
 

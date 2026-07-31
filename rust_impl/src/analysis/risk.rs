@@ -12,11 +12,14 @@ use crate::data::risk_signature::{
 use crate::models::{Finding, Severity, RiskLevel, RiskSummary};
 
 fn risk_level_for_score(score: u32) -> RiskLevel {
-    match score {
-        0..=LOW_RISK_MAX => RiskLevel::Low,
-        20..=MEDIUM_RISK_MAX => RiskLevel::Medium,
-        40..=HIGH_RISK_MAX => RiskLevel::High,
-        _ => RiskLevel::Critical,
+    if score <= LOW_RISK_MAX {
+        RiskLevel::Low
+    } else if score <= MEDIUM_RISK_MAX {
+        RiskLevel::Medium
+    } else if score <= HIGH_RISK_MAX {
+        RiskLevel::High
+    } else {
+        RiskLevel::Critical
     }
 }
 

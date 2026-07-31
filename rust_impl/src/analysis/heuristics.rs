@@ -11,7 +11,7 @@ use crate::data::section_entropy_signature::{
     max_expected_entropy_for,
 };
 use crate::data::section_signature::SECTION_RULES;
-use crate::data::url_signature::{EXECUTABLE_EXTENSIONS, URL_REGEX};
+use crate::data::url_signature::{BENIGN_URL_HOSTS, EXECUTABLE_EXTENSIONS, URL_REGEX};
 use crate::models::{Finding, Import, Section, Severity};
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
@@ -32,6 +32,21 @@ pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     findings
 }
 
+fn is_benign_url_host(url_lower: &str) -> bool {
+    let after_scheme = match url_lower.find("://") {
+        Some(index) => &url_lower[index + 3..],
+        None => url_lower,
+    };
+    let host = after_scheme
+        .split(['/', ':', '?', '#'])
+        .next()
+        .unwrap_or("");
+
+    BENIGN_URL_HOSTS
+        .iter()
+        .any(|benign| host == *benign || host.ends_with(&format!(".{benign}")))
+}
+
 pub fn suspicious_url(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
@@ -50,17 +65,33 @@ pub fn suspicious_url(strings: &[String]) -> Vec<Finding> {
                 }
             }
 
+            let benign_host = is_benign_url_host(&url_lower);
+            if benign_host {
+                severity_ = Severity::Low;
+            }
+
             if found.insert(url.clone()) {
+                let description = if benign_host {
+                    format!("Found URL: {} (known-benign host)", url)
+                } else {
+                    format!("Found URL: {}", url)
+                };
                 findings.push(Finding {
                     severity: severity_,
                     category: "Networking".to_string(),
                     title: url.clone(),
-                    description: format!("Found URL: {}", url),
+                    description,
                 });
             }
         }
     }
     findings
+}
+
+fn is_valid_ipv4(candidate: &str) -> bool {
+    candidate
+        .split('.')
+        .all(|octet| octet.parse::<u8>().is_ok())
 }
 
 pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
@@ -71,6 +102,9 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
     for string in strings {
         for m in re.find_iter(string) {
             let ip = m.as_str().to_string();
+            if !is_valid_ipv4(&ip) {
+                continue;
+            }
 
             if found.insert(ip.clone()) {
                 let is_local = LOCAL_IPS.contains(&ip.as_str())

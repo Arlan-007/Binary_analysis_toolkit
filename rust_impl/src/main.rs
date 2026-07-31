@@ -24,8 +24,6 @@ use rust_impl::report::{CodeScan, ReportInput, render_report};
 
 const CODE_SCAN_MAX_BYTES: usize = 1_048_576;
 const CODE_SCAN_MAX_INSTRUCTIONS: usize = 100_000;
-/// Relative to the working directory, so `cargo run` from `rust_impl/` collects reports in
-/// `rust_impl/report/` and leaves `samples/` untouched.
 const REPORT_DIRECTORY: &str = "report";
 
 #[derive(Debug, Parser)]
@@ -144,8 +142,6 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     let code_scan = match scan_code(&info, &labels)? {
         Some(mut scan) => {
             print_code_features(&scan.features);
-            // Drains the findings into the shared list; the features and disassembly stay put
-            // for the report.
             all_findings.append(&mut scan.findings);
             Some(scan)
         }
@@ -199,9 +195,6 @@ fn write_report(cli: &Cli, report: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Named after the binary, not its full path, so `report/` stays readable. Two samples with the
-/// same file name in different directories will overwrite each other; pass `--report` to keep
-/// both.
 fn report_file_name(binary: &Path) -> OsString {
     let mut name = binary
         .file_name()

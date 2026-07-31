@@ -1,5 +1,6 @@
 use std::error::Error;
-use std::path::PathBuf;
+use std::ffi::{OsStr, OsString};
+use std::path::{Path, PathBuf};
 
 use clap::{Parser, ValueEnum};
 use rust_impl::analysis::heuristics::{
@@ -19,9 +20,13 @@ use rust_impl::format::detect::detect_format;
 use rust_impl::format::elf::get_elf_metadata;
 use rust_impl::format::pe::get_pe_metadata;
 use rust_impl::models::{BinaryFormat, BinaryInfo, CodeFeatures, Disassembly, Finding};
+use rust_impl::report::{CodeScan, ReportInput, render_report};
 
 const CODE_SCAN_MAX_BYTES: usize = 1_048_576;
 const CODE_SCAN_MAX_INSTRUCTIONS: usize = 100_000;
+/// Relative to the working directory, so `cargo run` from `rust_impl/` collects reports in
+/// `rust_impl/report/` and leaves `samples/` untouched.
+const REPORT_DIRECTORY: &str = "report";
 
 #[derive(Debug, Parser)]
 #[command(about = "Static binary-analysis toolkit with bounded Capstone disassembly")]
@@ -48,6 +53,18 @@ struct Cli {
     /// Maximum number of instructions shown by an explicit disassembly request.
     #[arg(long, default_value_t = 200)]
     max_instructions: usize,
+
+    /// Where to write the Markdown report. Defaults to `report/<binary>.report.md`.
+    #[arg(long)]
+    report: Option<PathBuf>,
+}
+
+/// Everything the bounded `.text` scan produced, kept together so the report can be handed the
+/// disassembly and its derived counts in one piece.
+struct CodeScanResult {
+    findings: Vec<Finding>,
+    features: CodeFeatures,
+    disassembly: Disassembly,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -69,6 +86,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     validate_cli(&cli)?;
 
     let path = cli.binary.to_string_lossy();
+    let file_size = std::fs::metadata(&cli.binary)?.len();
     let format = detect_format(&path)?;
     let info = match format {
         BinaryFormat::Elf => get_elf_metadata(&path)?,
@@ -104,11 +122,13 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     let encodings = detect_encoded_strings(&strings);
     let entropy_string = high_entropy_strings(&strings);
     let entropy_section = high_entropy_sections(&info.sections);
+    // `None` means nothing checked, which the report reports as "unknown". Only ELF symbol
+    // tables are parsed, so treating an empty table as stripped is only valid there.
     let is_stripped = match format {
-        BinaryFormat::Elf => symbols.is_empty(),
-        BinaryFormat::Pe | BinaryFormat::MachO | BinaryFormat::Unknown => false,
+        BinaryFormat::Elf => Some(symbols.is_empty()),
+        BinaryFormat::Pe | BinaryFormat::MachO | BinaryFormat::Unknown => None,
     };
-    let packed_binary = detect_packed_binary(&info.sections, is_stripped);
+    let packed_binary = detect_packed_binary(&info.sections, is_stripped.unwrap_or(false));
 
     let mut all_findings = Vec::new();
     all_findings.extend(suspicious_imports);
@@ -121,10 +141,16 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     all_findings.extend(entropy_section);
     all_findings.extend(packed_binary);
 
-    if let Some((instruction_findings, features)) = scan_code(&info, &labels)? {
-        print_code_features(&features);
-        all_findings.extend(instruction_findings);
-    }
+    let code_scan = match scan_code(&info, &labels)? {
+        Some(mut scan) => {
+            print_code_features(&scan.features);
+            // Drains the findings into the shared list; the features and disassembly stay put
+            // for the report.
+            all_findings.append(&mut scan.findings);
+            Some(scan)
+        }
+        None => None,
+    };
 
     if let Some(target) = cli.disasm {
         let options = DisassemblyOptions {
@@ -135,9 +161,54 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
         print_disassembly(&disassembly, &labels);
     }
 
+    let risk = calculate_risk_score(&all_findings);
     print_findings(&all_findings);
-    println!("Risk summary: {:#?}", calculate_risk_score(&all_findings));
+    println!("Risk summary: {risk:#?}");
+
+    let code = code_scan.as_ref().map(|scan| CodeScan {
+        disassembly: &scan.disassembly,
+        features: &scan.features,
+        instruction_budget: CODE_SCAN_MAX_INSTRUCTIONS,
+    });
+    let input = ReportInput {
+        path: &path,
+        file_size,
+        is_stripped,
+    };
+    let report = render_report(&input, &info, &all_findings, &risk, code.as_ref());
+
+    write_report(&cli, &report)?;
+
     Ok(())
+}
+
+/// Reports collect in `report/` rather than beside the binary, so the samples directory stays
+/// exactly as checked in and the analysed file's directory never has to be writable. An explicit
+/// `--report` path is used as given.
+fn write_report(cli: &Cli, report: &str) -> Result<(), Box<dyn Error>> {
+    let destination = match &cli.report {
+        Some(destination) => destination.clone(),
+        None => {
+            std::fs::create_dir_all(REPORT_DIRECTORY)?;
+            Path::new(REPORT_DIRECTORY).join(report_file_name(&cli.binary))
+        }
+    };
+
+    std::fs::write(&destination, report)?;
+    println!("Report written to {}", destination.display());
+    Ok(())
+}
+
+/// Named after the binary, not its full path, so `report/` stays readable. Two samples with the
+/// same file name in different directories will overwrite each other; pass `--report` to keep
+/// both.
+fn report_file_name(binary: &Path) -> OsString {
+    let mut name = binary
+        .file_name()
+        .unwrap_or_else(|| OsStr::new("binary"))
+        .to_os_string();
+    name.push(".report.md");
+    name
 }
 
 fn validate_cli(cli: &Cli) -> Result<(), DisassemblyError> {
@@ -183,7 +254,7 @@ fn validate_cli(cli: &Cli) -> Result<(), DisassemblyError> {
 fn scan_code(
     info: &BinaryInfo,
     labels: &SymbolLabels,
-) -> Result<Option<(Vec<Finding>, CodeFeatures)>, DisassemblyError> {
+) -> Result<Option<CodeScanResult>, DisassemblyError> {
     let options = DisassemblyOptions {
         max_bytes: CODE_SCAN_MAX_BYTES,
         max_instructions: CODE_SCAN_MAX_INSTRUCTIONS,
@@ -194,7 +265,11 @@ fn scan_code(
             let findings =
                 analyze_instructions(info.format, &info.architecture, &disassembly.instructions);
             let features = extract_code_features(&disassembly.instructions, &findings);
-            Ok(Some((findings, features)))
+            Ok(Some(CodeScanResult {
+                findings,
+                features,
+                disassembly,
+            }))
         }
         Err(
             error @ (DisassemblyError::UnsupportedArchitecture(_)

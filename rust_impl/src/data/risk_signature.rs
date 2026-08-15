@@ -250,14 +250,7 @@ pub const RISK_CATEGORY_RULES: &[RiskCategoryRule] = &[
     // Networking / network indicators
     RiskCategoryRule {
         category: "Networking",
-        aliases: &[
-            "Network Indicator",
-            "Network Indicators",
-            "URL",
-            "IP",
-            "Embedded URL",
-            "Embedded IP",
-        ],
+        aliases: &["URL", "IP", "Embedded URL", "Embedded IP"],
         family: "Network Activity",
         base_score: 2,
         incremental_score: 1,
@@ -377,19 +370,7 @@ pub const RISK_CATEGORY_RULES: &[RiskCategoryRule] = &[
     // Credential / secret material
     RiskCategoryRule {
         category: "Credentials",
-        aliases: &[
-            "Hardcoded Credential",
-            "Hardcoded Credentials",
-            "Secret Material",
-            "Password Material",
-            "API / Token Material",
-            "Authentication Material",
-            "Login Context",
-            "Session / Web Auth",
-            "Multi-Factor / PIN",
-            "Certificates / Keystores",
-            "Cloud / Service Secrets",
-        ],
+        aliases: &["Hardcoded Credential", "Hardcoded Credentials"],
         family: "Credentials",
         base_score: 12,
         incremental_score: 3,
@@ -546,7 +527,7 @@ pub const RISK_CATEGORY_RULES: &[RiskCategoryRule] = &[
     },
     RiskCategoryRule {
         category: "Virtualized / Protected Binary",
-        aliases: &["Virtualized Binary", "Protected Binary"],
+        aliases: &["Virtualized Binary"],
         family: "Obfuscation",
         base_score: 18,
         incremental_score: 0,

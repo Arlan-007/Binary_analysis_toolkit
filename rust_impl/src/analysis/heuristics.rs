@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::collections::HashSet;
+use std::sync::OnceLock;
 
 use crate::analysis::entropy::{calculate_entropy, max_entropy_for_length};
 use crate::data::credential_signature::{CREDENTIAL_RULES, is_plausible};
@@ -13,6 +14,24 @@ use crate::data::section_entropy_signature::{
 use crate::data::section_signature::SECTION_RULES;
 use crate::data::url_signature::{BENIGN_URL_HOSTS, EXECUTABLE_EXTENSIONS, URL_REGEX};
 use crate::models::{Finding, Import, Section, Severity};
+
+static URL_RE: OnceLock<Regex> = OnceLock::new();
+static IP_RE: OnceLock<Regex> = OnceLock::new();
+static CREDENTIAL_PATTERNS: OnceLock<Vec<Vec<Regex>>> = OnceLock::new();
+
+fn credential_patterns() -> &'static Vec<Vec<Regex>> {
+    CREDENTIAL_PATTERNS.get_or_init(|| {
+        CREDENTIAL_RULES
+            .iter()
+            .map(|rule| {
+                rule.patterns
+                    .iter()
+                    .map(|p| Regex::new(p).unwrap_or_else(|e| panic!("invalid credential pattern '{p}': {e}")))
+                    .collect()
+            })
+            .collect()
+    })
+}
 
 pub fn suspicious_imports(imports: &[Import]) -> Vec<Finding> {
     let mut findings = Vec::new();
@@ -51,7 +70,7 @@ pub fn suspicious_url(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
 
-    let re = Regex::new(URL_REGEX).unwrap();
+    let re = URL_RE.get_or_init(|| Regex::new(URL_REGEX).expect("URL_REGEX is invalid"));
     for string in strings {
         for m in re.find_iter(string) {
             let url = m.as_str().to_string();
@@ -98,7 +117,7 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
 
-    let re = Regex::new(IPV4_REGEX).unwrap();
+    let re = IP_RE.get_or_init(|| Regex::new(IPV4_REGEX).expect("IPV4_REGEX is invalid"));
     for string in strings {
         for m in re.find_iter(string) {
             let ip = m.as_str().to_string();
@@ -131,21 +150,12 @@ pub fn suspicious_ip(strings: &[String]) -> Vec<Finding> {
 pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
     let mut findings = Vec::new();
     let mut found: HashSet<String> = HashSet::new();
-    let compiled_rules: Vec<_> = CREDENTIAL_RULES
-        .iter()
-        .map(|rule| {
-            let regexes = rule
-                .patterns
-                .iter()
-                .map(|pattern| Regex::new(pattern).unwrap())
-                .collect::<Vec<_>>();
+    let mut low_category_seen: HashSet<String> = HashSet::new();
 
-            (regexes, rule)
-        })
-        .collect();
+    let patterns = credential_patterns();
 
     for string in strings {
-        for (regexes, rule) in &compiled_rules {
+        for (regexes, rule) in patterns.iter().zip(CREDENTIAL_RULES.iter()) {
             let matched = if rule.requires_value {
                 regexes.iter().any(|re| {
                     re.captures(string)
@@ -158,7 +168,11 @@ pub fn suspicious_credentials(strings: &[String]) -> Vec<Finding> {
             };
 
             if matched {
-                if found.insert(string.clone()) {
+                let is_low = matches!(rule.severity, Severity::Low);
+                let category_already_seen =
+                    is_low && !low_category_seen.insert(rule.category.to_string());
+
+                if !category_already_seen && found.insert(string.clone()) {
                     findings.push(Finding {
                         severity: rule.severity.clone(),
                         title: format!("Credential Indicator: {}", rule.category),
@@ -184,7 +198,7 @@ pub fn suspicious_sections(sections: &[Section]) -> Vec<Finding> {
             if rule
                 .names
                 .iter()
-                .any(|name| section_name == *name || section_name.contains(name))
+                .any(|name| section_name == *name)
                 && seen.insert(section_name.clone())
             {
                 findings.push(Finding {

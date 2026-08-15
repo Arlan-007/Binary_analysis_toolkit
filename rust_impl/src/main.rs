@@ -57,8 +57,6 @@ struct Cli {
     report: Option<PathBuf>,
 }
 
-/// Everything the bounded `.text` scan produced, kept together so the report can be handed the
-/// disassembly and its derived counts in one piece.
 struct CodeScanResult {
     findings: Vec<Finding>,
     features: CodeFeatures,
@@ -120,8 +118,6 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     let encodings = detect_encoded_strings(&strings);
     let entropy_string = high_entropy_strings(&strings);
     let entropy_section = high_entropy_sections(&info.sections);
-    // `None` means nothing checked, which the report reports as "unknown". Only ELF symbol
-    // tables are parsed, so treating an empty table as stripped is only valid there.
     let is_stripped = match format {
         BinaryFormat::Elf => Some(symbols.is_empty()),
         BinaryFormat::Pe | BinaryFormat::MachO | BinaryFormat::Unknown => None,
@@ -178,9 +174,6 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// Reports collect in `report/` rather than beside the binary, so the samples directory stays
-/// exactly as checked in and the analysed file's directory never has to be writable. An explicit
-/// `--report` path is used as given.
 fn write_report(cli: &Cli, report: &str) -> Result<(), Box<dyn Error>> {
     let destination = match &cli.report {
         Some(destination) => destination.clone(),
@@ -190,16 +183,32 @@ fn write_report(cli: &Cli, report: &str) -> Result<(), Box<dyn Error>> {
         }
     };
 
+    if destination.is_dir() {
+        return Err(format!(
+            "report destination '{}' is a directory; specify a file path instead",
+            destination.display()
+        )
+        .into());
+    }
+
     std::fs::write(&destination, report)?;
     println!("Report written to {}", destination.display());
     Ok(())
 }
 
 fn report_file_name(binary: &Path) -> OsString {
+    let path_str = binary.to_string_lossy();
+    let mut hash: u64 = 14_695_981_039_346_656_037;
+    for byte in path_str.bytes() {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(1_099_511_628_211);
+    }
+
     let mut name = binary
         .file_name()
         .unwrap_or_else(|| OsStr::new("binary"))
         .to_os_string();
+    name.push(format!("-{:08x}", hash as u32));
     name.push(".report.md");
     name
 }

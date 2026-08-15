@@ -17,15 +17,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="report generation">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="finishing touches.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/analysis_report.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/risk.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/risk.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/string.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/string.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/encoding_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/encoding_signature.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/ip_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/ip_signature.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/risk_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/risk_signature.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/section_entropy_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/section_entropy_signature.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/rust_impl/src/data/url_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/url_signature.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/format/elf.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/format/elf.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -158,7 +160,15 @@
       <workItem from="1784718717769" duration="3218000" />
       <workItem from="1784794769386" duration="2483000" />
       <workItem from="1785258300186" duration="3152000" />
-      <workItem from="1785513370210" duration="5175000" />
+      <workItem from="1785513370210" duration="5428000" />
+      <workItem from="1785524143422" duration="640000" />
+      <workItem from="1786005188807" duration="127000" />
+      <workItem from="1786014134422" duration="6259000" />
+      <workItem from="1786108786137" duration="14000" />
+      <workItem from="1786123049724" duration="565000" />
+      <workItem from="1786126274242" duration="10000" />
+      <workItem from="1786699617884" duration="732000" />
+      <workItem from="1786785459997" duration="1046000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Setup">
       <option name="closed" value="true" />
@@ -208,7 +218,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785516877556</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="finishing touches.">
+      <option name="closed" value="true" />
+      <created>1785519354689</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1785519354689</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -220,6 +238,7 @@
     <MESSAGE value="added symbol extraction and improved import extract for elf." />
     <MESSAGE value="final touches before capstone" />
     <MESSAGE value="report generation" />
-    <option name="LAST_COMMIT_MESSAGE" value="report generation" />
+    <MESSAGE value="finishing touches." />
+    <option name="LAST_COMMIT_MESSAGE" value="finishing touches." />
   </component>
 </project>

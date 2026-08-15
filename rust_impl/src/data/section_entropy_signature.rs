@@ -249,8 +249,8 @@ pub const SECTION_ENTROPY_RULES: &[SectionEntropyRule] = &[
     },
     SectionEntropyRule {
         pattern: ".rsrc",
-        max_expected_entropy: 6.50,
-        notes: "Resource section; can legitimately be denser.",
+        max_expected_entropy: 7.20,
+        notes: "Resource section; legitimately contains compressed images (PNG/BMP/JPEG entropy ~7.9) and embedded manifests.",
     },
     SectionEntropyRule {
         pattern: ".pdata",

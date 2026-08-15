@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::data::risk_signature::{
     canonical_category_name,
+    family_for_category,
+    family_rule_for,
     rule_for_category,
     severity_multiplier,
     MAX_RISK_SCORE,
@@ -48,7 +50,6 @@ pub fn calculate_risk_score(findings: &[Finding]) -> RiskSummary {
         grouped.entry(category).or_default().push(finding);
     }
 
-    let mut total_score: f64 = 0.0;
     let mut category_scores: BTreeMap<String, u32> = BTreeMap::new();
     for (category, group) in grouped {
         let rule = rule_for_category(&category);
@@ -72,10 +73,18 @@ pub fn calculate_risk_score(findings: &[Finding]) -> RiskSummary {
         let capped_score = capped_score.min(rule.category_cap);
 
         category_scores.insert(category, capped_score);
-        total_score += capped_score as f64;
     }
 
-    let total_score = total_score.round() as u32;
+    let mut family_totals: BTreeMap<&str, u32> = BTreeMap::new();
+    for (category, &score) in &category_scores {
+        let family = family_for_category(category);
+        *family_totals.entry(family).or_default() += score;
+    }
+
+    let total_score: u32 = family_totals
+        .iter()
+        .map(|(&family, &score)| score.min(family_rule_for(family).family_cap))
+        .sum();
     let total_score = total_score.min(MAX_RISK_SCORE);
 
     RiskSummary {

@@ -13,6 +13,9 @@ pub fn is_base64(s: &str) -> bool {
     if !s.len().is_multiple_of(4) {
         return false;
     }
+    if !s.contains('+') && !s.contains('/') && !s.contains('=') {
+        return false;
+    }
     let decoded = match general_purpose::STANDARD.decode(s) {
         Ok(bytes) => bytes,
         Err(_) => return false,

@@ -16,6 +16,7 @@ pub const EXECUTABLE_EXTENSIONS: &[&str] = &[
 ];
 
 pub const BENIGN_URL_HOSTS: &[&str] = &[
+    // Standards bodies and open-source infrastructure
     "gnu.org",
     "w3.org",
     "xmlsoap.org",
@@ -32,6 +33,27 @@ pub const BENIGN_URL_HOSTS: &[&str] = &[
     "zlib.net",
     "libpng.org",
     "curl.se",
+    // Major OS / platform vendors
     "microsoft.com",
+    "windows.net",
+    "microsoftonline.com",
+    "azure.com",
     "apple.com",
+    // Code hosting and package registries
+    "github.com",
+    "githubusercontent.com",
+    "nuget.org",
+    "crates.io",
+    // PKI / certificate infrastructure (OCSP, CRL endpoints)
+    "digicert.com",
+    "letsencrypt.org",
+    "verisign.com",
+    "globalsign.com",
+    "sectigo.com",
+    "usertrust.com",
+    "comodoca.com",
+    // CDN and Google infrastructure frequently embedded via TLS libs
+    "google.com",
+    "googleapis.com",
+    "cloudflare.com",
 ];

@@ -17,17 +17,31 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="finishing touches.">
+    <list default="true" id="7211404f-ba1b-4b94-8d72-e5cd75513a29" name="Changes" comment="Recaliberating to reduce false positives. improved signature data, liked family limits.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/analysis_report.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/heuristics.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/risk.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/risk.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/analysis/string.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/analysis/string.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/encoding_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/encoding_signature.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/ip_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/ip_signature.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/risk_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/risk_signature.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/section_entropy_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/section_entropy_signature.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/rust_impl/src/data/url_signature.rs" beforeDir="false" afterPath="$PROJECT_DIR$/rust_impl/src/data/url_signature.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/pyproject.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/rust_modules/entropy_scanner/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/rust_modules/entropy_scanner/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/rust_modules/string_scanner/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/rust_modules/string_scanner/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/samples/elf/elf-sample" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/samples/pe/pe-sample" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/common/constants.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/common/models.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/disasm/capstone_engine.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/heuristics/entropy.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/heuristics/suspicious_imports.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/heuristics/suspicious_string.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/imports/analyzer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/parser/binary_loader.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/parser/parser.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/reports/generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/reports/report.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/src/strings/extractor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/tests/test_parser.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Python_Impl/uv.lock" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rust_impl/app.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -168,7 +182,7 @@
       <workItem from="1786123049724" duration="565000" />
       <workItem from="1786126274242" duration="10000" />
       <workItem from="1786699617884" duration="732000" />
-      <workItem from="1786785459997" duration="1046000" />
+      <workItem from="1786785459997" duration="1772000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Setup">
       <option name="closed" value="true" />
@@ -226,7 +240,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785519354689</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Recaliberating to reduce false positives. improved signature data, liked family limits.">
+      <option name="closed" value="true" />
+      <created>1786786799745</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1786786799745</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -239,6 +261,7 @@
     <MESSAGE value="final touches before capstone" />
     <MESSAGE value="report generation" />
     <MESSAGE value="finishing touches." />
-    <option name="LAST_COMMIT_MESSAGE" value="finishing touches." />
+    <MESSAGE value="Recaliberating to reduce false positives. improved signature data, liked family limits." />
+    <option name="LAST_COMMIT_MESSAGE" value="Recaliberating to reduce false positives. improved signature data, liked family limits." />
   </component>
 </project>
